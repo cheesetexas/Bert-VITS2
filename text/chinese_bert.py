@@ -3,16 +3,13 @@ import sys
 import torch
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
-from config import config
-
 LOCAL_PATH = "./bert/chinese-roberta-wwm-ext-large"
 
 tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
 
-
-def get_bert_feature(text, word2ph, device=config.bert_gen_config.device):
+def get_bert_feature(text, word2ph, device="cpu"):
     if (
         sys.platform == "darwin"
         and torch.backends.mps.is_available()
