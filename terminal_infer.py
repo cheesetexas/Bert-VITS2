@@ -1,4 +1,5 @@
-# flake8: noqa: E402
+import argparse
+from pydub import AudioSegment
 import os
 import logging
 import re_matching
@@ -352,7 +353,47 @@ def tts_fn(
     return "Success", (hps.data.sampling_rate, audio_concat)
 
 
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-m", "--model", default="./logs/as/G_8000.pth", help="path of your model"
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        default="./configs/config.json",
+        help="path of your config file",
+    )
+    parser.add_argument(
+        "--share", default=False, help="make link public", action="store_true"
+    )
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="enable DEBUG-LEVEL log"
+    )
+
+    parser.add_argument(
+        "--text", help="要生成语音的文本内容"
+    )
+    parser.add_argument(
+        "--speaker",help="角色名称，config.json中spk2id配置的那个角色名"
+    )
+    parser.add_argument(
+        "--sdp", type=float,default=0.2, help="sdp参数，0到1之间，默认0.2"
+    )
+    parser.add_argument(
+        "--noise", type=float,default=0.6, help="噪音规模，0.1到2之间，默认0.6"
+    )
+    parser.add_argument(
+        "--noise_w",type=float,default=0.8, help="噪音规模w，0.1到2之间，默认0.8"
+    )
+    parser.add_argument(
+        "--length_scale",type=float,default=1, help="长度标尺，0.1到2之间，默认1"
+    )
+
+
+    args = parser.parse_args()
     if config.webui_config.debug:
         logger.info("Enable DEBUG-LEVEL log")
         logging.basicConfig(level=logging.DEBUG)
@@ -366,122 +407,36 @@ if __name__ == "__main__":
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
     languages = ["ZH", "JP", "EN", "mix", "auto"]
-    with gr.Blocks() as app:
-        with gr.Row():
-            with gr.Column():
-                text = gr.TextArea(
-                    label="输入文本内容",
-                    placeholder="""
-                    如果你选择语言为\'mix\'，必须按照格式输入，否则报错:
-                        格式举例(zh是中文，jp是日语，不区分大小写；说话人举例:gongzi):
-                         [说话人1]<zh>你好，こんにちは！ <jp>こんにちは，世界。
-                         [说话人2]<zh>你好吗？<jp>元気ですか？
-                         [说话人3]<zh>谢谢。<jp>どういたしまして。
-                         ...
-                    另外，所有的语言选项都可以用'|'分割长段实现分句生成。
-                    """,
-                )
-                trans = gr.Button("中翻日", variant="primary")
-                slicer = gr.Button("快速切分", variant="primary")
-                speaker = gr.Dropdown(
-                    choices=speakers, value=speakers[0], label="Speaker"
-                )
-                emotion = gr.Slider(
-                    minimum=0, maximum=9, value=0, step=1, label="Emotion"
-                )
-                sdp_ratio = gr.Slider(
-                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
-                )
-                noise_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.6, step=0.1, label="Noise"
-                )
-                noise_scale_w = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="Noise_W"
-                )
-                length_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=1.0, step=0.1, label="Length"
-                )
-                language = gr.Dropdown(
-                    choices=languages, value=languages[0], label="Language"
-                )
-                btn = gr.Button("生成音频！", variant="primary")
-            with gr.Column():
-                with gr.Row():
-                    with gr.Column():
-                        interval_between_sent = gr.Slider(
-                            minimum=0,
-                            maximum=5,
-                            value=0.2,
-                            step=0.1,
-                            label="句间停顿(秒)，勾选按句切分才生效",
-                        )
-                        interval_between_para = gr.Slider(
-                            minimum=0,
-                            maximum=10,
-                            value=1,
-                            step=0.1,
-                            label="段间停顿(秒)，需要大于句间停顿才有效",
-                        )
-                        opt_cut_by_sent = gr.Checkbox(
-                            label="按句切分    在按段落切分的基础上再按句子切分文本"
-                        )
-                        slicer = gr.Button("切分生成", variant="primary")
-                text_output = gr.Textbox(label="状态信息")
-                audio_output = gr.Audio(label="输出音频")
-                # explain_image = gr.Image(
-                #     label="参数解释信息",
-                #     show_label=True,
-                #     show_share_button=False,
-                #     show_download_button=False,
-                #     value=os.path.abspath("./img/参数说明.png"),
-                # )
-                reference_text = gr.Markdown(value="## 情感参考音频（WAV 格式）：用于生成语音的情感参考。")
-                reference_audio = gr.Audio(label="情感参考音频（WAV 格式）", type="filepath")
-        btn.click(
-            tts_fn,
-            inputs=[
-                text,
-                speaker,
-                sdp_ratio,
-                noise_scale,
-                noise_scale_w,
-                length_scale,
-                language,
-                reference_audio,
-                emotion,
-            ],
-            outputs=[text_output, audio_output],
-        )
 
-        trans.click(
-            translate,
-            inputs=[text],
-            outputs=[text],
-        )
-        slicer.click(
-            tts_split,
-            inputs=[
-                text,
-                speaker,
-                sdp_ratio,
-                noise_scale,
-                noise_scale_w,
-                length_scale,
-                language,
-                opt_cut_by_sent,
-                interval_between_para,
-                interval_between_sent,
-                reference_audio,
-                emotion,
-            ],
-            outputs=[text_output, audio_output],
-        )
+    print(f'运行参数：{args}')
+    #调用tts：
+    msg,audios = tts_fn(
+                text=args.text,
+                speaker=args.speaker,
+                sdp_ratio=args.sdp,
+                noise_scale=args.noise,
+                noise_scale_w=args.noise_w,
+                length_scale=args.length_scale,
+                language='ZH',
+                reference_audio=None,
+                emotion=0,
+                )
+    if msg=='Success':
+          sound = AudioSegment(
+            audios[1].tobytes(),
+            frame_rate=audios[0],
+            sample_width=2,
+            channels=1
+          )
+          #存为wav
+          sound.export(f"音频-{args.text}.wav", format="wav")
 
-        reference_audio.upload(
-            lambda x: librosa.load(x, 16000)[::-1],
-            inputs=[reference_audio],
-            outputs=[reference_audio],
-        )
-    print("推理页面已开启!")
-    webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
-    app.launch(share=config.webui_config.share, server_port=config.webui_config.port)
+    print(f'生成音频完成！')
+
+    '''
+    命令行调用：
+        python 命令行推理.py -m 模型所在路径.pth \
+            --text 你好啊你是谁呀 \
+            --speaker 角色名
+            
+    '''

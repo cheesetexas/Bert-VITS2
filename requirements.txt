@@ -33,3 +33,4 @@ pykakasi
 langid
 pytest-shutil
 gitpython
+pydub

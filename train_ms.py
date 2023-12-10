@@ -509,11 +509,9 @@ def train_and_evaluate(
                         epoch, 100.0 * batch_idx / len(train_loader)
                     )
                 )
-                print("Train Epoch: {} [{:.0f}%]".format(
-                        epoch, 100.0 * batch_idx / len(train_loader)
-                    ))
+
                 logger.info([x.item() for x in losses] + [global_step, lr])
-                print([x.item() for x in losses] + [global_step, lr])
+
                 scalar_dict = {
                     "loss/g/total": loss_gen_all,
                     "loss/d/total": loss_disc_all,
