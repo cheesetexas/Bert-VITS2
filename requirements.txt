@@ -34,3 +34,5 @@ langid
 pytest-shutil
 gitpython
 pydub
+soundfile
+tqdm
